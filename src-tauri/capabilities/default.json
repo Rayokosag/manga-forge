@@ -1,0 +1,38 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Core capabilities for the main window.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "dialog:default",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "fs:default",
+    "fs:allow-read-text-file",
+    "fs:allow-write-text-file",
+    "fs:allow-write-file",
+    { "identifier": "fs:scope", "allow": [{ "path": "**" }] },
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "http://127.0.0.1:*" },
+        { "url": "http://localhost:*" },
+        { "url": "https://api.openai.com/*" },
+        { "url": "https://api.anthropic.com/*" }
+      ]
+    },
+    {
+      "identifier": "sql:allow-load",
+      "allow": [{ "database": "sqlite:mangaforge.db" }]
+    },
+    {
+      "identifier": "sql:allow-execute",
+      "allow": [{ "database": "sqlite:mangaforge.db" }]
+    },
+    {
+      "identifier": "sql:allow-select",
+      "allow": [{ "database": "sqlite:mangaforge.db" }]
+    }
+  ]
+}

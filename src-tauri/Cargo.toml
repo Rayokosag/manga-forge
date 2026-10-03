@@ -1,0 +1,36 @@
+[package]
+name = "manga-forge"
+version = "0.1.0"
+description = "Local-first story-to-manga storyboard studio"
+authors = ["you"]
+edition = "2021"
+rust-version = "1.77.2"
+
+# The entrypoint lib that Tauri builds; keeps mobile targets possible later.
+[lib]
+name = "manga_forge_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-sql = { version = "2", features = ["sqlite"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-http = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[features]
+# Enables Tauri's dev-only conveniences; set by `tauri dev`.
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+# Optimize the release binary for size/RAM on a 16GB target machine.
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
