@@ -37,8 +37,10 @@ rustc --version   # verify
 ```bash
 cd /home/boink/manga
 npm install
-npm run tauri icon   # generate placeholder app icons into src-tauri/icons
 ```
+
+App icons are already generated and committed in `src-tauri/icons/` (brand mark).
+To replace them, drop a 1024×1024 PNG in and run `npm run tauri icon path/to/icon.png`.
 
 ### 4. Database migration — already wired
 
@@ -63,6 +65,24 @@ npm run app:dev
 > WSL). If the window doesn't appear, run `wsl --update` from PowerShell. Ollama
 > and ComfyUI may run either inside WSL or natively on Windows — the adapter
 > layer targets `127.0.0.1:11434` / `127.0.0.1:8188` either way.
+
+### 6. Build an installable app
+
+```bash
+npm run app:build
+```
+
+Produces a standalone installer (no terminal needed afterwards) in
+`src-tauri/target/release/bundle/`:
+
+- **Linux:** `appimage/Manga Forge_1.1.0_amd64.AppImage` (double-click to run) and
+  `deb/manga-forge_1.1.0_amd64.deb` (`sudo dpkg -i …`).
+- **Windows / macOS:** run the same command on that OS to get `.msi`/`.exe` or
+  `.dmg` (icons for all three are already bundled).
+
+The first build compiles the Rust side and takes several minutes; subsequent
+builds are incremental. The release profile is tuned for size/RAM
+(`lto`, `opt-level = "s"`, `strip`).
 
 ## Database
 
