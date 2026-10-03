@@ -1,6 +1,6 @@
 {
   "name": "manga-forge",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "Local-first story-to-manga storyboard studio (Tauri 2 + React + Drizzle/SQLite).",
@@ -14,8 +14,7 @@
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "lint": "eslint ."
+    "test": "vitest run"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.4",

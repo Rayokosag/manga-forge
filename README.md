@@ -100,8 +100,19 @@ All seven phases are in. See the Export tab for backups; snapshots are database-
 - **Robustness:** app-level `ErrorBoundary`.
 - **Tests:** `npm test` (Vitest) covers the prompt compiler, layout math, and agent JSON parsing.
 
-Verification gate (all green): `npm test` · `npm run typecheck` · `npm run build`.
-The Rust/GUI side (`npm run app:dev`) requires the Rust toolchain + WSLg and is run locally.
-- Phase 5: React-Konva panel canvas
-- Phase 6: Local AI layer + multi-agent orchestration + prompt inspector
-- Phase 7: Export pipeline + polish
+### V1.1
+- **Relational scene cast:** the Advanced editor's "Present characters" is backed by
+  the `scene_characters` join table (stable character IDs, per-scene outfit/expression
+  state), with a one-shot migration of any legacy name lists.
+- **Storyboard canvas:** anchorable speech-bubble tails (drag the tip; it re-bases to
+  the nearest edge), a page **bleed** trim guide + control, and panel **drag-snap** to
+  sibling edges and the gutter grid.
+- **Migration 0001:** adds `pages.bleed` (wired into `lib.rs` as version 2) — the first
+  hand-written delta on top of the baseline.
+- **Tests:** suite expanded to 28 — snap geometry, join-table reconciliation, and the
+  workspace store's scene-character flow.
+
+Verification gate (all green): `npm test` · `npm run typecheck` · `npm run build`,
+also enforced in CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) on every
+push and PR to `master`. The Rust/GUI side (`npm run app:dev`) requires the Rust
+toolchain + WSLg and is run locally.
