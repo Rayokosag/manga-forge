@@ -145,7 +145,7 @@ export interface SceneStructured {
   timeOfDay?: string;
   weather?: string;
   lighting?: string;
-  /** Lightweight character tokens until Phase 3 wires real sceneCharacters. */
+  /** Character names present in the scene, chosen from the project cast in the Advanced editor. */
   presentCharacters?: string[];
   emotionalStates?: string[];
   cameraAngles?: string[];
