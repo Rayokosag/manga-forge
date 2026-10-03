@@ -17,7 +17,7 @@ import { useHtmlImage } from '@/hooks/useHtmlImage';
 import { useStoryboardStore } from '@/store/useStoryboardStore';
 import { useCastStore } from '@/store/useCastStore';
 import type { Page, Panel, PanelLayer } from '@/db/schema';
-import type { LayerKonva } from './layouts';
+import { snapPanel, type LayerKonva } from './layouts';
 
 const LAYER_DEFAULTS: Record<string, Partial<LayerKonva> & { text: string }> = {
   dialogue: { text: 'Dialogue…', fontSize: 18, width: 180, fill: '#0a0a0a' },
@@ -33,26 +33,6 @@ function layerGeom(layer: PanelLayer): LayerKonva {
   return { x: 20, y: 20, ...(layer.konva as LayerKonva | null) };
 }
 
-const SNAP = 8; // snap threshold in canvas px
-
-/** Snap a value to the nearest candidate within SNAP, else to the gutter grid. */
-function snap1(v: number, candidates: number[], gutter: number): number {
-  let best = v;
-  let bestD = SNAP;
-  for (const c of candidates) {
-    const d = Math.abs(c - v);
-    if (d < bestD) {
-      bestD = d;
-      best = c;
-    }
-  }
-  if (best !== v) return best;
-  if (gutter > 0) {
-    const g = Math.round(v / gutter) * gutter;
-    if (Math.abs(g - v) <= SNAP) return g;
-  }
-  return v;
-}
 
 export function PanelCanvas({ page }: { page: Page }) {
   const panels = useStoryboardStore((s) => s.panels);
@@ -240,18 +220,7 @@ function PanelNode({
   // Snap the dragged panel to sibling edges (with gutter) and the gutter grid.
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
     const node = e.target;
-    const xCandidates: number[] = [];
-    const yCandidates: number[] = [];
-    for (const s of siblings) {
-      // align left/right edges, or butt up against a sibling across a gutter
-      xCandidates.push(s.x, s.x + s.width - width, s.x + s.width + gutter, s.x - width - gutter);
-      yCandidates.push(s.y, s.y + s.height - height, s.y + s.height + gutter, s.y - height - gutter);
-    }
-    let nx = snap1(node.x(), xCandidates, gutter);
-    let ny = snap1(node.y(), yCandidates, gutter);
-    nx = Math.max(0, Math.min(nx, pageW - width));
-    ny = Math.max(0, Math.min(ny, pageH - height));
-    node.position({ x: nx, y: ny });
+    node.position(snapPanel(node.x(), node.y(), width, height, siblings, gutter, pageW, pageH));
   };
 
   return (

@@ -62,6 +62,52 @@ export function buildLayout(
   return tiersToRects(w, h, gutter, template.rows);
 }
 
+/** Snap threshold in canvas px for panel drag-alignment. */
+export const SNAP_THRESHOLD = 8;
+
+function snapAxis(v: number, candidates: number[], gutter: number): number {
+  let best = v;
+  let bestD = SNAP_THRESHOLD;
+  for (const c of candidates) {
+    const d = Math.abs(c - v);
+    if (d < bestD) {
+      bestD = d;
+      best = c;
+    }
+  }
+  if (best !== v) return best;
+  if (gutter > 0) {
+    const g = Math.round(v / gutter) * gutter;
+    if (Math.abs(g - v) <= SNAP_THRESHOLD) return g;
+  }
+  return v;
+}
+
+/**
+ * Snap a dragged panel's top-left to sibling edges (aligned, or butted across a
+ * gutter) and to the gutter grid, then clamp it inside the page. Pure geometry.
+ */
+export function snapPanel(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  siblings: PanelRect[],
+  gutter: number,
+  pageW: number,
+  pageH: number,
+): { x: number; y: number } {
+  const xs: number[] = [];
+  const ys: number[] = [];
+  for (const s of siblings) {
+    xs.push(s.x, s.x + s.width - width, s.x + s.width + gutter, s.x - width - gutter);
+    ys.push(s.y, s.y + s.height - height, s.y + s.height + gutter, s.y - height - gutter);
+  }
+  const nx = Math.max(0, Math.min(snapAxis(x, xs, gutter), Math.max(0, pageW - width)));
+  const ny = Math.max(0, Math.min(snapAxis(y, ys, gutter), Math.max(0, pageH - height)));
+  return { x: nx, y: ny };
+}
+
 /** Generate exactly `n` panel rects in a balanced grid (used for beat → page). */
 export function autoLayoutRects(n: number, w: number, h: number, gutter: number): PanelRect[] {
   const count = Math.max(1, n);

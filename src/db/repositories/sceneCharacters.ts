@@ -1,6 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '../client';
 import { sceneCharacters, type NewSceneCharacter, type SceneCharacter } from '../schema';
+import { reconcileIds } from './reconcile';
 
 export async function listSceneCharacters(sceneId: string): Promise<SceneCharacter[]> {
   return db.select().from(sceneCharacters).where(eq(sceneCharacters.sceneId, sceneId));
@@ -48,11 +49,10 @@ export async function setSceneCharacters(
   characterIds: string[],
 ): Promise<SceneCharacter[]> {
   const existing = await listSceneCharacters(sceneId);
-  const existingIds = new Set(existing.map((r) => r.characterId));
-  const wanted = new Set(characterIds);
-
-  const toAdd = characterIds.filter((id) => !existingIds.has(id));
-  const toRemove = existing.filter((r) => !wanted.has(r.characterId)).map((r) => r.characterId);
+  const { toAdd, toRemove } = reconcileIds(
+    existing.map((r) => r.characterId),
+    characterIds,
+  );
 
   if (toAdd.length) {
     await db
