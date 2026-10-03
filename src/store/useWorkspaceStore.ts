@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { toast } from '@/components/ui/sonner';
-import { chaptersRepo, projectsRepo, scenesRepo } from '@/db/repositories';
+import { chaptersRepo, projectsRepo, scenesRepo, sceneCharactersRepo } from '@/db/repositories';
 import type {
   Chapter,
   NewChapter,
@@ -8,6 +8,7 @@ import type {
   NewScene,
   Project,
   Scene,
+  SceneCharacter,
 } from '@/db/schema';
 
 interface WorkspaceState {
@@ -17,6 +18,8 @@ interface WorkspaceState {
   projects: Project[];
   chapters: Chapter[];
   scenes: Scene[];
+  /** Join rows (character presence + per-scene state) for the current scene. */
+  sceneCharacters: SceneCharacter[];
 
   currentProjectId: string | null;
   currentChapterId: string | null;
@@ -46,6 +49,10 @@ interface WorkspaceState {
   updateScene: (id: string, patch: Partial<NewScene>) => Promise<void>;
   deleteScene: (id: string) => Promise<void>;
 
+  // scene ↔ character join
+  loadSceneCharacters: (sceneId: string) => Promise<void>;
+  setSceneCharacterIds: (sceneId: string, characterIds: string[]) => Promise<void>;
+
   // ui
   toggleFocusMode: () => void;
 
@@ -66,6 +73,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   projects: [],
   chapters: [],
   scenes: [],
+  sceneCharacters: [],
   currentProjectId: null,
   currentChapterId: null,
   currentSceneId: null,
@@ -217,7 +225,27 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   /* ------------------------------------------------------------------ scenes */
 
   selectScene(id) {
-    set({ currentSceneId: id });
+    // Drop the previous scene's join rows; the editor loads the new set.
+    set({ currentSceneId: id, sceneCharacters: [] });
+  },
+
+  async loadSceneCharacters(sceneId) {
+    try {
+      const rows = await sceneCharactersRepo.listSceneCharacters(sceneId);
+      // Ignore if the scene changed under us mid-load.
+      if (get().currentSceneId === sceneId) set({ sceneCharacters: rows });
+    } catch (err) {
+      fail('Load scene characters', err);
+    }
+  },
+
+  async setSceneCharacterIds(sceneId, characterIds) {
+    try {
+      const rows = await sceneCharactersRepo.setSceneCharacters(sceneId, characterIds);
+      if (get().currentSceneId === sceneId) set({ sceneCharacters: rows });
+    } catch (err) {
+      fail('Update scene characters', err);
+    }
   },
 
   async createScene(data) {

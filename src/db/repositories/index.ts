@@ -4,6 +4,7 @@ export * as scenesRepo from './scenes';
 export * as charactersRepo from './characters';
 export * as outfitsRepo from './outfits';
 export * as expressionsRepo from './expressions';
+export * as sceneCharactersRepo from './sceneCharacters';
 export * as relationshipsRepo from './relationships';
 export * as worldRepo from './world';
 export * as timelineRepo from './timeline';

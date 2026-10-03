@@ -17,6 +17,9 @@ import type { Scene, SceneStructured } from '@/db/schema';
  */
 export function AdvancedEditor({ scene }: { scene: Scene }) {
   const updateScene = useWorkspaceStore((s) => s.updateScene);
+  const sceneCharacters = useWorkspaceStore((s) => s.sceneCharacters);
+  const loadSceneCharacters = useWorkspaceStore((s) => s.loadSceneCharacters);
+  const setSceneCharacterIds = useWorkspaceStore((s) => s.setSceneCharacterIds);
   const characters = useCastStore((s) => s.characters);
 
   const [draft, setDraft] = React.useState<SceneStructured>(() => ({
@@ -47,17 +50,48 @@ export function AdvancedEditor({ scene }: { scene: Scene }) {
     });
   };
 
-  // Options are the project's real cast, plus any legacy free-text names that
-  // were entered before this field was linked to the character DB — so older
-  // scenes never silently lose a present character.
-  const characterOptions: Option[] = React.useMemo(() => {
-    const names = new Set(characters.map((c) => c.name));
-    const legacy = (draft.presentCharacters ?? []).filter((n) => !names.has(n));
-    return [
-      ...characters.map((c) => ({ value: c.name, label: c.name })),
-      ...legacy.map((n) => ({ value: n, label: `${n} (not in cast)` })),
-    ];
-  }, [characters, draft.presentCharacters]);
+  // Present characters are now stored relationally in the scene_characters join
+  // table (stable character IDs), not as free-text names. Options are the cast.
+  const characterOptions: Option[] = React.useMemo(
+    () => characters.map((c) => ({ value: c.id, label: c.name })),
+    [characters],
+  );
+  const selectedIds = React.useMemo(
+    () => sceneCharacters.map((sc) => sc.characterId),
+    [sceneCharacters],
+  );
+
+  // Load this scene's join rows, migrating any legacy name-based list once.
+  const migratedFor = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    void loadSceneCharacters(scene.id);
+    migratedFor.current = null;
+  }, [scene.id, loadSceneCharacters]);
+
+  React.useEffect(() => {
+    // One-shot: if the join table is empty but legacy names exist, resolve them
+    // to cast IDs and seed the join table, then drop the stale name list.
+    if (migratedFor.current === scene.id) return;
+    const legacyNames = scene.structured?.presentCharacters ?? [];
+    if (sceneCharacters.length > 0 || legacyNames.length === 0 || characters.length === 0) return;
+    const byName = new Map(characters.map((c) => [c.name, c.id]));
+    const matched = legacyNames.filter((n) => byName.has(n));
+    const ids = matched.map((n) => byName.get(n) as string);
+    migratedFor.current = scene.id;
+    if (ids.length) void setSceneCharacterIds(scene.id, ids);
+    // Keep the name-mirror consistent with what we could resolve.
+    set('presentCharacters', matched);
+  }, [scene.id, scene.structured?.presentCharacters, sceneCharacters, characters, setSceneCharacterIds]);
+
+  const changeCharacters = (ids: string[]) => {
+    void setSceneCharacterIds(scene.id, ids);
+    // Mirror names into the JSON so exports/snapshots stay human-readable.
+    const byId = new Map(characters.map((c) => [c.id, c.name]));
+    set(
+      'presentCharacters',
+      ids.map((id) => byId.get(id)).filter((n): n is string => Boolean(n)),
+    );
+  };
 
   return (
     <ScrollArea className="h-full">
@@ -98,8 +132,8 @@ export function AdvancedEditor({ scene }: { scene: Scene }) {
         <Field label="Present characters" hint="Pick from this project's cast">
           <MultiSelect
             options={characterOptions}
-            value={draft.presentCharacters ?? []}
-            onChange={(v) => set('presentCharacters', v)}
+            value={selectedIds}
+            onChange={changeCharacters}
             placeholder="Select characters…"
             emptyText="No characters yet — add them in the Characters view"
           />
