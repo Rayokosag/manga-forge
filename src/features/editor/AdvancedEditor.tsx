@@ -4,8 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { TagInput } from '@/components/common/TagInput';
+import { MultiSelect, type Option } from '@/components/common/MultiSelect';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
+import { useCastStore } from '@/store/useCastStore';
 import type { Scene, SceneStructured } from '@/db/schema';
 
 /**
@@ -15,6 +17,7 @@ import type { Scene, SceneStructured } from '@/db/schema';
  */
 export function AdvancedEditor({ scene }: { scene: Scene }) {
   const updateScene = useWorkspaceStore((s) => s.updateScene);
+  const characters = useCastStore((s) => s.characters);
 
   const [draft, setDraft] = React.useState<SceneStructured>(() => ({
     locationName: scene.structured?.locationName ?? '',
@@ -43,6 +46,18 @@ export function AdvancedEditor({ scene }: { scene: Scene }) {
       return next;
     });
   };
+
+  // Options are the project's real cast, plus any legacy free-text names that
+  // were entered before this field was linked to the character DB — so older
+  // scenes never silently lose a present character.
+  const characterOptions: Option[] = React.useMemo(() => {
+    const names = new Set(characters.map((c) => c.name));
+    const legacy = (draft.presentCharacters ?? []).filter((n) => !names.has(n));
+    return [
+      ...characters.map((c) => ({ value: c.name, label: c.name })),
+      ...legacy.map((n) => ({ value: n, label: `${n} (not in cast)` })),
+    ];
+  }, [characters, draft.presentCharacters]);
 
   return (
     <ScrollArea className="h-full">
@@ -80,11 +95,13 @@ export function AdvancedEditor({ scene }: { scene: Scene }) {
 
         <Separator />
 
-        <Field label="Present characters" hint="Temporary free text until the character DB (Phase 3)">
-          <TagInput
+        <Field label="Present characters" hint="Pick from this project's cast">
+          <MultiSelect
+            options={characterOptions}
             value={draft.presentCharacters ?? []}
             onChange={(v) => set('presentCharacters', v)}
-            placeholder="Kaede, The Warden…"
+            placeholder="Select characters…"
+            emptyText="No characters yet — add them in the Characters view"
           />
         </Field>
 
