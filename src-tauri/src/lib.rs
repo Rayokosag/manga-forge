@@ -13,12 +13,20 @@ use tauri_plugin_sql::{Migration, MigrationKind};
 ///
 /// `0000_init.sql` is the baseline schema (matches `schema.ts`).
 fn migrations() -> Vec<Migration> {
-    vec![Migration {
-        version: 1,
-        description: "init",
-        sql: include_str!("../migrations/0000_init.sql"),
-        kind: MigrationKind::Up,
-    }]
+    vec![
+        Migration {
+            version: 1,
+            description: "init",
+            sql: include_str!("../migrations/0000_init.sql"),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 2,
+            description: "add_page_bleed",
+            sql: include_str!("../migrations/0001_add_page_bleed.sql"),
+            kind: MigrationKind::Up,
+        },
+    ]
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

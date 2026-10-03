@@ -543,6 +543,8 @@ export const pages = sqliteTable(
       .notNull()
       .default(sql`'{"width":1240,"height":1754,"dpi":150}'`), // ~A4 @150dpi
     gutter: integer('gutter').notNull().default(16),
+    /** Print bleed margin (px) drawn as a trim/safe-area guide; 0 = none. */
+    bleed: integer('bleed').notNull().default(0),
     readingDirection: text('reading_direction', { enum: ['rtl', 'ltr'] })
       .notNull()
       .default('rtl'),

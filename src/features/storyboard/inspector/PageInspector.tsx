@@ -83,7 +83,7 @@ export function PageInspector({ page }: { page: Page }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <div className="space-y-1">
             <Label className="text-xs">Gutter</Label>
             <Input
@@ -91,6 +91,15 @@ export function PageInspector({ page }: { page: Page }) {
               className="h-8 px-2"
               value={page.gutter}
               onChange={(e) => void update(page.id, { gutter: Number(e.target.value) })}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Bleed</Label>
+            <Input
+              type="number"
+              className="h-8 px-2"
+              value={page.bleed}
+              onChange={(e) => void update(page.id, { bleed: Math.max(0, Number(e.target.value)) })}
             />
           </div>
           <div className="space-y-1">

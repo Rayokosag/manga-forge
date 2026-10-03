@@ -8,6 +8,9 @@ export interface LayerKonva {
   fontSize?: number;
   rotation?: number;
   fill?: string;
+  /** Speech-bubble tail tip, relative to the layer group origin. */
+  tailX?: number;
+  tailY?: number;
 }
 
 export interface LayoutTemplate {

@@ -6,6 +6,7 @@ import {
   Rect,
   Text,
   Line,
+  Circle,
   Image as KonvaImage,
   Transformer,
 } from 'react-konva';
@@ -30,6 +31,27 @@ const LAYER_DEFAULTS: Record<string, Partial<LayerKonva> & { text: string }> = {
 
 function layerGeom(layer: PanelLayer): LayerKonva {
   return { x: 20, y: 20, ...(layer.konva as LayerKonva | null) };
+}
+
+const SNAP = 8; // snap threshold in canvas px
+
+/** Snap a value to the nearest candidate within SNAP, else to the gutter grid. */
+function snap1(v: number, candidates: number[], gutter: number): number {
+  let best = v;
+  let bestD = SNAP;
+  for (const c of candidates) {
+    const d = Math.abs(c - v);
+    if (d < bestD) {
+      bestD = d;
+      best = c;
+    }
+  }
+  if (best !== v) return best;
+  if (gutter > 0) {
+    const g = Math.round(v / gutter) * gutter;
+    if (Math.abs(g - v) <= SNAP) return g;
+  }
+  return v;
 }
 
 export function PanelCanvas({ page }: { page: Page }) {
@@ -124,6 +146,21 @@ export function PanelCanvas({ page }: { page: Page }) {
               shadowOpacity={0.25}
             />
 
+            {/* bleed / trim guide */}
+            {page.bleed > 0 && (
+              <Rect
+                x={page.bleed}
+                y={page.bleed}
+                width={pageW - page.bleed * 2}
+                height={pageH - page.bleed * 2}
+                stroke="#e11d48"
+                strokeWidth={1}
+                dash={[10, 6]}
+                opacity={0.5}
+                listening={false}
+              />
+            )}
+
             {/* panels */}
             {sortedPanels.map((panel, i) => (
               <PanelNode
@@ -134,6 +171,10 @@ export function PanelCanvas({ page }: { page: Page }) {
                 onSelect={() => select({ kind: 'panel', id: panel.id })}
                 onChange={(patch) => void updatePanel(panel.id, patch)}
                 registerRef={registerRef}
+                siblings={sortedPanels.filter((p) => p.id !== panel.id).map((p) => p.rect)}
+                gutter={page.gutter}
+                pageW={pageW}
+                pageH={pageH}
               />
             ))}
 
@@ -177,6 +218,10 @@ function PanelNode({
   onSelect,
   onChange,
   registerRef,
+  siblings,
+  gutter,
+  pageW,
+  pageH,
 }: {
   panel: Panel;
   index: number;
@@ -184,9 +229,30 @@ function PanelNode({
   onSelect: () => void;
   onChange: (patch: Partial<Panel>) => void;
   registerRef: (id: string, node: Konva.Node | null) => void;
+  siblings: Panel['rect'][];
+  gutter: number;
+  pageW: number;
+  pageH: number;
 }) {
   const image = useHtmlImage(panel.generatedImagePath);
   const { x, y, width, height } = panel.rect;
+
+  // Snap the dragged panel to sibling edges (with gutter) and the gutter grid.
+  const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
+    const node = e.target;
+    const xCandidates: number[] = [];
+    const yCandidates: number[] = [];
+    for (const s of siblings) {
+      // align left/right edges, or butt up against a sibling across a gutter
+      xCandidates.push(s.x, s.x + s.width - width, s.x + s.width + gutter, s.x - width - gutter);
+      yCandidates.push(s.y, s.y + s.height - height, s.y + s.height + gutter, s.y - height - gutter);
+    }
+    let nx = snap1(node.x(), xCandidates, gutter);
+    let ny = snap1(node.y(), yCandidates, gutter);
+    nx = Math.max(0, Math.min(nx, pageW - width));
+    ny = Math.max(0, Math.min(ny, pageH - height));
+    node.position({ x: nx, y: ny });
+  };
 
   return (
     <Group
@@ -196,6 +262,7 @@ function PanelNode({
       ref={(node) => registerRef(panel.id, node)}
       onMouseDown={onSelect}
       onTap={onSelect}
+      onDragMove={handleDragMove}
       onDragEnd={(e) => onChange({ rect: { ...panel.rect, x: e.target.x(), y: e.target.y() } })}
       onTransformEnd={(e) => {
         const node = e.target;
@@ -253,6 +320,8 @@ function LayerNode({
   onChange: (geom: Partial<LayerKonva>) => void;
   characterName: (id: string) => string;
 }) {
+  // Live tail-tip position while dragging the bubble's tail handle.
+  const [tipDrag, setTipDrag] = React.useState<{ x: number; y: number } | null>(null);
   const def = LAYER_DEFAULTS[layer.type] ?? LAYER_DEFAULTS.overlay;
   const g = layerGeom(layer);
   const width = g.width ?? def.width ?? 180;
@@ -278,6 +347,16 @@ function LayerNode({
     // rough height from text length / width
     const lines = Math.max(1, Math.ceil(text.length / Math.max(8, width / (fontSize * 0.55))));
     const boxH = lines * fontSize * 1.3 + padding * 2;
+
+    // Tail tip: persisted anchor, live drag, or default (below-left of bubble).
+    const tailX = tipDrag?.x ?? g.tailX ?? width * 0.34;
+    const tailY = tipDrag?.y ?? g.tailY ?? boxH + 24;
+    // Base sits on the bubble edge nearest the tip, straddling the tip's x.
+    const onTop = tailY < boxH / 2;
+    const baseY = onTop ? 1 : boxH - 1;
+    const clampX = (v: number) => Math.max(10, Math.min(width - 10, v));
+    const tailPoints = [clampX(tailX - 16), baseY, tailX, tailY, clampX(tailX + 16), baseY];
+
     return (
       <Group {...common}>
         {isBubble ? (
@@ -291,10 +370,16 @@ function LayerNode({
               cornerRadius={Math.min(boxH, width) / 2}
             />
             <Line
-              points={[width * 0.3, boxH - 2, width * 0.22, boxH + 22, width * 0.46, boxH - 2]}
+              points={tailPoints}
               closed
               fill="#ffffff"
               stroke={outline ?? '#0a0a0a'}
+              strokeWidth={outline ? 3 : 2}
+            />
+            {/* mask the bubble outline where the tail joins it */}
+            <Line
+              points={[clampX(tailX - 15), baseY, clampX(tailX + 15), baseY]}
+              stroke="#ffffff"
               strokeWidth={outline ? 3 : 2}
             />
           </>
@@ -317,6 +402,32 @@ function LayerNode({
           align="center"
           fill={isBubble ? fill : '#fafafa'}
         />
+        {isBubble && selected && !layer.locked && (
+          <Circle
+            x={tailX}
+            y={tailY}
+            radius={6}
+            fill="#e11d48"
+            stroke="#ffffff"
+            strokeWidth={1.5}
+            draggable
+            onMouseDown={(e) => {
+              e.cancelBubble = true;
+            }}
+            onDragStart={(e) => {
+              e.cancelBubble = true;
+            }}
+            onDragMove={(e) => {
+              e.cancelBubble = true;
+              setTipDrag({ x: e.target.x(), y: e.target.y() });
+            }}
+            onDragEnd={(e) => {
+              e.cancelBubble = true;
+              onChange({ tailX: e.target.x(), tailY: e.target.y() });
+              setTipDrag(null);
+            }}
+          />
+        )}
       </Group>
     );
   }
