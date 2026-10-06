@@ -33,3 +33,16 @@ export async function pickTextFile(filters: Filter[]): Promise<string | null> {
   if (!selected || Array.isArray(selected)) return null;
   return readTextFile(selected);
 }
+
+/**
+ * Prompt the user to pick an image file and return its absolute path (not its
+ * bytes). Panels store the path and render it through the Tauri asset protocol.
+ */
+export async function pickImageFile(): Promise<string | null> {
+  const selected = await open({
+    multiple: false,
+    filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp', 'bmp'] }],
+  });
+  if (!selected || Array.isArray(selected)) return null;
+  return selected;
+}

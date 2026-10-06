@@ -4,10 +4,12 @@ import {
   ArrowUp,
   Eye,
   EyeOff,
+  ImagePlus,
   Lock,
   Sparkles,
   Trash2,
   Unlock,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -24,6 +26,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useEntityDraft } from '@/hooks/useEntityDraft';
+import { pickImageFile } from '@/export/fileSave';
+import { toast } from '@/components/ui/sonner';
 import { useStoryboardStore } from '@/store/useStoryboardStore';
 import type { Panel, PanelRect } from '@/db/schema';
 import { LAYER_META, LAYER_TYPE_ORDER } from '../layerMeta';
@@ -59,6 +63,20 @@ export function PanelInspector({ panel }: { panel: Panel }) {
       content: LAYER_META[type].defaultContent,
       konva: { x: x + 24, y: y + 24 },
     });
+  };
+
+  // Bring a generated image (e.g. from ComfyUI's output folder) into this panel.
+  const importImage = async () => {
+    try {
+      const path = await pickImageFile();
+      if (!path) return;
+      void update(panel.id, { generatedImagePath: path, status: 'rendered' });
+      toast.success('Panel image set', { description: path.split(/[/\\]/).pop() });
+    } catch (err) {
+      toast.error('Import image failed', {
+        description: err instanceof Error ? err.message : String(err),
+      });
+    }
   };
 
   return (
@@ -146,6 +164,29 @@ export function PanelInspector({ panel }: { panel: Panel }) {
         <Button className="w-full" onClick={() => setPromptOpen(true)}>
           <Sparkles /> Compile &amp; generate
         </Button>
+
+        <Button variant="outline" className="w-full" onClick={() => void importImage()}>
+          <ImagePlus /> Import image
+        </Button>
+        {draft.generatedImagePath && (
+          <div className="flex items-center gap-1.5 rounded-md border border-border bg-muted/30 px-2 py-1">
+            <span
+              className="flex-1 truncate text-xs text-muted-foreground"
+              title={draft.generatedImagePath}
+            >
+              {draft.generatedImagePath.split(/[/\\]/).pop()}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title="Remove image"
+              className="h-6 w-6 text-muted-foreground hover:text-destructive"
+              onClick={() => void update(panel.id, { generatedImagePath: null })}
+            >
+              <X />
+            </Button>
+          </div>
+        )}
 
         <Separator />
 

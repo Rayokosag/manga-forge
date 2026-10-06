@@ -1,0 +1,75 @@
+
+> manga-forge@1.1.0 app:build
+> tauri build
+
+        Info Looking up installed tauri packages to check mismatched versions...
+        Warn The bundle identifier "dev.mangaforge.app" set in `"tauri.conf.json" identifier` ends with `.app`. This is not recommended because it conflicts with the application bundle extension on macOS.
+     Running beforeBuildCommand `npm run build`
+
+> manga-forge@1.1.0 build
+> tsc --noEmit && vite build
+
+[36mvite v6.4.3 [32mbuilding for production...[36m[39m
+transforming...
+[32m✓[39m 2249 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mindex.html                               [39m[1m[2m  0.53 kB[22m[1m[22m[2m │ gzip:   0.33 kB[22m
+[2mdist/[22m[2massets/[22m[35mindex-CDtZFh18.css                [39m[1m[2m 29.08 kB[22m[1m[22m[2m │ gzip:   5.96 kB[22m
+[2mdist/[22m[2massets/[22m[36museEntityDraft-BFvoQ6pn.js        [39m[1m[2m  0.27 kB[22m[1m[22m[2m │ gzip:   0.23 kB[22m
+[2mdist/[22m[2massets/[22m[36mzap-CbbzelWU.js                   [39m[1m[2m  0.43 kB[22m[1m[22m[2m │ gzip:   0.31 kB[22m
+[2mdist/[22m[2massets/[22m[36mpencil-BBwJt7qz.js                [39m[1m[2m  0.45 kB[22m[1m[22m[2m │ gzip:   0.33 kB[22m
+[2mdist/[22m[2massets/[22m[36mfile-plus-2-DsasX7DP.js           [39m[1m[2m  0.45 kB[22m[1m[22m[2m │ gzip:   0.31 kB[22m
+[2mdist/[22m[2massets/[22m[36mfolder-open-Bg0eUeDk.js           [39m[1m[2m  0.46 kB[22m[1m[22m[2m │ gzip:   0.32 kB[22m
+[2mdist/[22m[2massets/[22m[36mfile-text-ZnBztl6c.js             [39m[1m[2m  0.50 kB[22m[1m[22m[2m │ gzip:   0.32 kB[22m
+[2mdist/[22m[2massets/[22m[36mwand-sparkles-Ddk7gdJ8.js         [39m[1m[2m  0.68 kB[22m[1m[22m[2m │ gzip:   0.40 kB[22m
+[2mdist/[22m[2massets/[22m[36mlock-CzLoL6x6.js                  [39m[1m[2m  0.70 kB[22m[1m[22m[2m │ gzip:   0.33 kB[22m
+[2mdist/[22m[2massets/[22m[36mPromptDialog-DuOCVBXP.js          [39m[1m[2m  0.99 kB[22m[1m[22m[2m │ gzip:   0.58 kB[22m
+[2mdist/[22m[2massets/[22m[36mTagInput-DSIZ0ZhW.js              [39m[1m[2m  1.07 kB[22m[1m[22m[2m │ gzip:   0.66 kB[22m
+[2mdist/[22m[2massets/[22m[36mMultiSelect-BLIL3o2E.js           [39m[1m[2m  1.37 kB[22m[1m[22m[2m │ gzip:   0.77 kB[22m
+[2mdist/[22m[2massets/[22m[36mrenderPage-L4EExVH8.js            [39m[1m[2m  2.47 kB[22m[1m[22m[2m │ gzip:   1.23 kB[22m
+[2mdist/[22m[2massets/[22m[36mtabs--qSqsSNV.js                  [39m[1m[2m  3.36 kB[22m[1m[22m[2m │ gzip:   1.47 kB[22m
+[2mdist/[22m[2massets/[22m[36mprojectBundle-jOyvBFUY.js         [39m[1m[2m  3.83 kB[22m[1m[22m[2m │ gzip:   1.31 kB[22m
+[2mdist/[22m[2massets/[22m[36mswitch-tjE29t7j.js                [39m[1m[2m  4.17 kB[22m[1m[22m[2m │ gzip:   1.83 kB[22m
+[2mdist/[22m[2massets/[22m[36mbadge-3M3BQUQm.js                 [39m[1m[2m  4.78 kB[22m[1m[22m[2m │ gzip:   2.13 kB[22m
+[2mdist/[22m[2massets/[22m[36mExportView-C3aJSLAq.js            [39m[1m[2m  6.48 kB[22m[1m[22m[2m │ gzip:   2.23 kB[22m
+[2mdist/[22m[2massets/[22m[36museStoryboardStore-8j9_X032.js    [39m[1m[2m  6.61 kB[22m[1m[22m[2m │ gzip:   2.40 kB[22m
+[2mdist/[22m[2massets/[22m[36mConfirmDialog-BObShv-0.js         [39m[1m[2m  6.78 kB[22m[1m[22m[2m │ gzip:   2.54 kB[22m
+[2mdist/[22m[2massets/[22m[36mslider-BO95_aFK.js                [39m[1m[2m 10.24 kB[22m[1m[22m[2m │ gzip:   4.09 kB[22m
+[2mdist/[22m[2massets/[22m[36mRelationshipsView-BqsZfcJ3.js     [39m[1m[2m 11.63 kB[22m[1m[22m[2m │ gzip:   4.29 kB[22m
+[2mdist/[22m[2massets/[22m[36mAiView-Cfb5h4ae.js                [39m[1m[2m 12.23 kB[22m[1m[22m[2m │ gzip:   3.83 kB[22m
+[2mdist/[22m[2massets/[22m[36mWorkspace-Cvgvmeno.js             [39m[1m[2m 17.83 kB[22m[1m[22m[2m │ gzip:   5.62 kB[22m
+[2mdist/[22m[2massets/[22m[36mdropdown-menu-n6B-JxV0.js         [39m[1m[2m 20.52 kB[22m[1m[22m[2m │ gzip:   6.20 kB[22m
+[2mdist/[22m[2massets/[22m[36mCharactersView-Dv8avYhu.js        [39m[1m[2m 21.69 kB[22m[1m[22m[2m │ gzip:   6.34 kB[22m
+[2mdist/[22m[2massets/[22m[36mWorldView-DKqB3AZE.js             [39m[1m[2m 21.74 kB[22m[1m[22m[2m │ gzip:   6.31 kB[22m
+[2mdist/[22m[2massets/[22m[36mpurify.es-BwoZCkIS.js             [39m[1m[2m 22.03 kB[22m[1m[22m[2m │ gzip:   8.77 kB[22m
+[2mdist/[22m[2massets/[22m[36mStoryboardView-DVQ_AfLO.js        [39m[1m[2m 36.07 kB[22m[1m[22m[2m │ gzip:  10.80 kB[22m
+[2mdist/[22m[2massets/[22m[36mlabel-C_7JiyYd.js                 [39m[1m[2m 45.87 kB[22m[1m[22m[2m │ gzip:  15.22 kB[22m
+[2mdist/[22m[2massets/[22m[36museDebouncedCallback-B1AkBBA8.js  [39m[1m[2m 57.17 kB[22m[1m[22m[2m │ gzip:  20.00 kB[22m
+[2mdist/[22m[2massets/[22m[36mzip-Z_HACDAF.js                   [39m[1m[2m 97.66 kB[22m[1m[22m[2m │ gzip:  30.41 kB[22m
+[2mdist/[22m[2massets/[22m[36mReactKonvaCore-Loeuz3XB.js        [39m[1m[2m 99.75 kB[22m[1m[22m[2m │ gzip:  31.67 kB[22m
+[2mdist/[22m[2massets/[22m[36mreact-vendor-7MU6i0XA.js          [39m[1m[2m141.85 kB[22m[1m[22m[2m │ gzip:  45.53 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex.es-DrQRZ08H.js              [39m[1m[2m159.78 kB[22m[1m[22m[2m │ gzip:  53.57 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-4KM_ZUU8.js                 [39m[1m[2m188.41 kB[22m[1m[22m[2m │ gzip:  55.56 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-BECzjRCV.js                 [39m[1m[2m194.35 kB[22m[1m[22m[2m │ gzip:  58.11 kB[22m
+[2mdist/[22m[2massets/[22m[36mhtml2canvas.esm-B0tyYwQk.js       [39m[1m[2m202.36 kB[22m[1m[22m[2m │ gzip:  48.04 kB[22m
+[2mdist/[22m[2massets/[22m[36mpdf-DQ2tnvUd.js                   [39m[1m[2m358.14 kB[22m[1m[22m[2m │ gzip: 118.12 kB[22m
+[32m✓ built in 17.51s[39m
+   Compiling tauri-plugin-fs v2.6.0
+   Compiling tauri-plugin-sql v2.5.0
+   Compiling tauri-plugin-dialog v2.8.1
+   Compiling tauri-plugin-http v2.8.0
+   Compiling manga-forge v1.1.0 (/home/boink/manga/src-tauri)
+    Finished `release` profile [optimized] target(s) in 2m 32s
+       Built application at: /home/boink/manga/src-tauri/target/release/manga-forge
+        Info Patching /home/boink/manga/src-tauri/target/release/manga-forge with bundle type information: deb
+    Bundling Manga Forge_1.1.0_amd64.deb (/home/boink/manga/src-tauri/target/release/bundle/deb/Manga Forge_1.1.0_amd64.deb)
+        Info Patching /home/boink/manga/src-tauri/target/release/manga-forge with bundle type information: rpm
+    Bundling Manga Forge-1.1.0-1.x86_64.rpm (/home/boink/manga/src-tauri/target/release/bundle/rpm/Manga Forge-1.1.0-1.x86_64.rpm)
+        Info Patching /home/boink/manga/src-tauri/target/release/manga-forge with bundle type information: appimage
+    Bundling Manga Forge_1.1.0_amd64.AppImage (/home/boink/manga/src-tauri/target/release/bundle/appimage/Manga Forge_1.1.0_amd64.AppImage)
+    Finished 3 bundles at:
+        /home/boink/manga/src-tauri/target/release/bundle/deb/Manga Forge_1.1.0_amd64.deb (4.26 MiB)
+        /home/boink/manga/src-tauri/target/release/bundle/rpm/Manga Forge-1.1.0-1.x86_64.rpm (4.26 MiB)
+        /home/boink/manga/src-tauri/target/release/bundle/appimage/Manga Forge_1.1.0_amd64.AppImage (79.24 MiB)
+
