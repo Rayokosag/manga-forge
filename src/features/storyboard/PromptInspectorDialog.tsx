@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from '@/components/ui/sonner';
 import { compilePrompt, type PromptSubject } from '@/ai/promptCompiler';
+import { downloadGeneratedImage } from '@/adapters/imageStore';
 import { runPromptEnhance } from '@/agents/orchestrator';
 import { outfitsRepo, expressionsRepo } from '@/db/repositories';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
@@ -168,10 +169,19 @@ export function PromptInspectorDialog({
   };
 
   const generate = async () => {
+    const prevStatus = panel.status;
     setGenerating(true);
-    setStatus('Starting…');
+    setStatus('Checking ComfyUI…');
     try {
       const adapter = useAiStore.getState().resolveImage();
+      // Fail fast with a clear message when the local server isn't up.
+      if (!(await adapter.health())) {
+        throw new Error(
+          `${adapter.label} is not reachable. Start it (e.g. run_zluda.bat) or check the connection in the AI tab.`,
+        );
+      }
+      await updatePanel(panel.id, { status: 'generating' });
+
       const result = await adapter.generate(
         {
           positive,
@@ -183,10 +193,24 @@ export function PromptInspectorDialog({
         },
         setStatus,
       );
-      setPreview(result.imageUrl);
       setSeed(result.seed);
+      setPreview(result.imageUrl);
+
+      // Copy the render into local app data so it survives ComfyUI restarts /
+      // offline use. Fall back to the live URL if the copy can't be written.
+      let imagePath = result.imageUrl;
+      try {
+        setStatus('Saving locally…');
+        imagePath = await downloadGeneratedImage(result.imageUrl, panel.id, result.seed);
+      } catch (saveErr) {
+        console.error('[generate] local save failed', saveErr);
+        toast.warning('Render not saved locally', {
+          description: 'Kept a reference to ComfyUI; it will load only while the server is running.',
+        });
+      }
+
       await updatePanel(panel.id, {
-        generatedImagePath: result.imageUrl,
+        generatedImagePath: imagePath,
         seed: result.seed,
         status: 'rendered',
         promptPositive: positive,
@@ -196,6 +220,7 @@ export function PromptInspectorDialog({
       });
       toast.success('Panel rendered');
     } catch (err) {
+      await updatePanel(panel.id, { status: prevStatus }).catch(() => {});
       toast.error('Generation failed', {
         description: err instanceof Error ? err.message : String(err),
       });
