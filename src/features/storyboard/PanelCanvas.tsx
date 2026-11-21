@@ -7,6 +7,7 @@ import {
   Text,
   Line,
   Circle,
+  Shape,
   Image as KonvaImage,
   Transformer,
 } from 'react-konva';
@@ -18,6 +19,52 @@ import { useStoryboardStore } from '@/store/useStoryboardStore';
 import { useCastStore } from '@/store/useCastStore';
 import type { Page, Panel, PanelLayer } from '@/db/schema';
 import { snapPanel, type LayerKonva } from './layouts';
+import {
+  fitView,
+  wheelFactor,
+  zoomAtCenter,
+  zoomAtPoint,
+  type CanvasView,
+} from './canvasView';
+
+/** Faint grid drawn behind the page so pan/zoom reads as an infinite surface. */
+function GridBackground({
+  pageW,
+  pageH,
+  scale,
+}: {
+  pageW: number;
+  pageH: number;
+  scale: number;
+}) {
+  const margin = 3000;
+  const step = 50;
+  const minX = -margin;
+  const minY = -margin;
+  const maxX = pageW + margin;
+  const maxY = pageH + margin;
+  // Keep grid lines ~1px regardless of zoom (they live inside the scaled stage).
+  const lineW = 1 / Math.max(scale, 0.01);
+  return (
+    <Shape
+      listening={false}
+      sceneFunc={(ctx) => {
+        ctx.beginPath();
+        for (let x = Math.ceil(minX / step) * step; x <= maxX; x += step) {
+          ctx.moveTo(x, minY);
+          ctx.lineTo(x, maxY);
+        }
+        for (let y = Math.ceil(minY / step) * step; y <= maxY; y += step) {
+          ctx.moveTo(minX, y);
+          ctx.lineTo(maxX, y);
+        }
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.14)';
+        ctx.lineWidth = lineW;
+        ctx.stroke();
+      }}
+    />
+  );
+}
 
 const LAYER_DEFAULTS: Record<string, Partial<LayerKonva> & { text: string }> = {
   dialogue: { text: 'Dialogue…', fontSize: 18, width: 180, fill: '#0a0a0a' },
@@ -47,7 +94,8 @@ export function PanelCanvas({ page }: { page: Page }) {
 
   const wrapRef = React.useRef<HTMLDivElement>(null);
   const [box, setBox] = React.useState({ w: 900, h: 700 });
-  const [zoom, setZoom] = React.useState(1);
+  // Infinite-canvas view transform: pan offset + zoom.
+  const [view, setView] = React.useState<CanvasView>({ x: 0, y: 0, scale: 1 });
 
   React.useEffect(() => {
     const el = wrapRef.current;
@@ -60,8 +108,29 @@ export function PanelCanvas({ page }: { page: Page }) {
     return () => ro.disconnect();
   }, []);
 
-  const baseScale = Math.min((box.w - 48) / pageW, (box.h - 48) / pageH);
-  const scale = Math.max(0.05, baseScale * zoom);
+  // Fit the page into view once per page, as soon as the viewport is measured.
+  const fittedPage = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    fittedPage.current = null;
+  }, [page.id]);
+  React.useEffect(() => {
+    if (fittedPage.current === page.id || box.w < 50 || box.h < 50) return;
+    setView(fitView(pageW, pageH, box.w, box.h));
+    fittedPage.current = page.id;
+  }, [box, pageW, pageH, page.id]);
+
+  const scale = view.scale;
+  const fitPage = React.useCallback(
+    () => setView(fitView(pageW, pageH, box.w, box.h)),
+    [pageW, pageH, box.w, box.h],
+  );
+  const handleWheel = React.useCallback((e: Konva.KonvaEventObject<WheelEvent>) => {
+    e.evt.preventDefault();
+    const stage = e.target.getStage();
+    const pointer = stage?.getPointerPosition();
+    if (!pointer) return;
+    setView((v) => zoomAtPoint(v, pointer, wheelFactor(e.evt.deltaY)));
+  }, []);
 
   // Transformer wiring (panels only).
   const trRef = React.useRef<Konva.Transformer>(null);
@@ -88,43 +157,63 @@ export function PanelCanvas({ page }: { page: Page }) {
   });
 
   return (
-    <div ref={wrapRef} className="relative h-full w-full overflow-auto bg-muted/30 p-6">
+    <div ref={wrapRef} className="relative h-full w-full overflow-hidden bg-muted/30">
       <div className="absolute right-3 top-3 z-10 flex items-center gap-1 rounded-md border border-border bg-background/90 p-1 shadow-sm">
-        <Button variant="ghost" size="icon-sm" onClick={() => setZoom((z) => Math.max(0.25, z - 0.15))}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          title="Zoom out"
+          onClick={() => setView((v) => zoomAtCenter(v, box.w, box.h, 1 / 1.2))}
+        >
           <Minus />
         </Button>
         <span className="w-12 text-center text-xs tabular-nums text-muted-foreground">
           {Math.round(scale * 100)}%
         </span>
-        <Button variant="ghost" size="icon-sm" onClick={() => setZoom((z) => Math.min(3, z + 0.15))}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          title="Zoom in"
+          onClick={() => setView((v) => zoomAtCenter(v, box.w, box.h, 1.2))}
+        >
           <Plus />
         </Button>
-        <Button variant="ghost" size="icon-sm" title="Fit" onClick={() => setZoom(1)}>
+        <Button variant="ghost" size="icon-sm" title="Fit page" onClick={fitPage}>
           <Maximize />
         </Button>
       </div>
 
-      <div className="flex min-h-full items-start justify-center">
-        <Stage
-          width={pageW * scale}
-          height={pageH * scale}
-          scaleX={scale}
-          scaleY={scale}
-          onMouseDown={(e) => {
-            if (e.target === e.target.getStage() || e.target.name() === 'page-bg') select(null);
-          }}
-        >
-          <Layer>
-            {/* page */}
-            <Rect
-              name="page-bg"
-              width={pageW}
-              height={pageH}
-              fill="#ffffff"
-              shadowColor="#000"
-              shadowBlur={16}
-              shadowOpacity={0.25}
-            />
+      <Stage
+        width={box.w}
+        height={box.h}
+        x={view.x}
+        y={view.y}
+        scaleX={scale}
+        scaleY={scale}
+        draggable
+        onWheel={handleWheel}
+        onDragEnd={(e) => {
+          // Only the stage itself panning — panel/layer drags handle their own.
+          if (e.target === e.target.getStage()) {
+            setView((v) => ({ ...v, x: e.target.x(), y: e.target.y() }));
+          }
+        }}
+        onMouseDown={(e) => {
+          if (e.target === e.target.getStage() || e.target.name() === 'page-bg') select(null);
+        }}
+      >
+        <Layer>
+          <GridBackground pageW={pageW} pageH={pageH} scale={scale} />
+          {/* page */}
+          <Rect
+            name="page-bg"
+            width={pageW}
+            height={pageH}
+            fill="#ffffff"
+            shadowColor="#000"
+            shadowBlur={16}
+            shadowOpacity={0.25}
+          />
 
             {/* bleed / trim guide */}
             {page.bleed > 0 && (
@@ -184,7 +273,6 @@ export function PanelCanvas({ page }: { page: Page }) {
             />
           </Layer>
         </Stage>
-      </div>
     </div>
   );
 }

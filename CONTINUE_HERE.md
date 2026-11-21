@@ -1,7 +1,36 @@
 # Manga Forge — Progress & Continue-Here Guide
 
-_Last updated: 2026-10-05. Read this first when resuming. Pairs with the auto-memory
+_Last updated: 2026-11-20. Read this first when resuming. Pairs with the auto-memory
 at `~/.claude/projects/-home-boink-manga/memory/`._
+
+## 🆕 2026-11-20 — Infinite-canvas storyboard (platform upgrade)
+Goal this session: "same project, better platform." First increment landed on the
+storyboard composer (`src/features/storyboard/PanelCanvas.tsx`):
+- **Infinite canvas**: mouse-wheel zoom-to-cursor, drag-anywhere to pan, faint grid
+  behind the page, auto-fit-on-open + Fit button. Pure transform math extracted to
+  `src/features/storyboard/canvasView.ts` with 8 unit tests (`canvasView.test.ts`).
+- Verified: `npm test` (36 pass), `npx tsc --noEmit`, `npm run build` all green, and
+  visually in `app:dev` (seeded demo chapter renders the Aya art + bubble + SFX on the
+  new grid). Rebuilt the release AppImage.
+- **Seeded demo content**: project "1 try" now has a "Chapter 1 — Demo" chapter with a
+  3-panel page (top panel uses `Aya_bedroom_00006_.png`). Delete that chapter to remove it.
+- NOT committed yet (still on `master`, working tree dirty) — branch + commit when ready.
+- Next candidates from the §11 spec: node-based prompt/workflow editor; in-app ComfyUI
+  generation wired to the canvas (needs ComfyUI running + the WSL↔Windows reach fix).
+
+## ✅ COMPLETE END-TO-END (2026-10-06)
+Full pipeline works: write story in app → lay out panels → generate B&W manga art in
+ComfyUI-Zluda (GPU, ~53s/512² image) → **Import image** into each panel (new feature, commit
+b306b83, in the Panel inspector) → add Dialogue/SFX layers → export multi-page manga PDF.
+- Image-import: Panel inspector "Import image" button → pick PNG (e.g. from
+  `/mnt/c/Users/bebit_oy68u8r/ComfyUI-Zluda/output`) → panel renders it via asset protocol.
+  App must be the REBUILT AppImage (post-b306b83). Launch: `GDK_SCALE=2 "<appimage>" --appimage-extract-and-run`.
+- B&W manga style: no separate model needed — Counterfeit (Danbooru-trained) + tags
+  `(monochrome:1.3),(greyscale:1.3),manga,comic,screentone,lineart,high contrast` positive,
+  `(color:1.4),colored` negative. Workflow `MangaForge_manga_bw.json` in ComfyUI-Zluda. For true
+  authored screentone, a Civitai manga LoRA is the upgrade (needs user's Civitai login to download).
+- Consistency workflows made: Aya_01_bedroom / _02_kitchen / _03_outdoor (same char block + seed 777).
+- Target style reference: user wants Bleach-style B&W paged manga (tiered panels, bubbles, big SFX).
 
 ## The goal (user's actual requirement)
 A **local, private** system to turn written stories into **actual manga** (pages of
